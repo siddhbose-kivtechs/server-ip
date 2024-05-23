@@ -22,6 +22,8 @@ router.route("/")
   .get((req, res) => {
     try {
       const logData = generateLogData(req, res);
+      // Set the Content-Type header to application/json
+      res.setHeader('Content-Type', 'application/json');
       res.json(logData);
     } catch (error) {
       console.error("Error generating log data:", error);
