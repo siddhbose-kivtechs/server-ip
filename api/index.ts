@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { handle } from '@hono/node-server/vercel';
-
+import { prettyJSON } from 'hono/pretty-json'
 const app = new Hono().basePath('/api');
-
+app.use(prettyJSON({ space: 4 })
 app.get('/', (c) => {
   // Retrieve IP address and user-agent
 
