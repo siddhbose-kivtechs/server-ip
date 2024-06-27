@@ -6,7 +6,7 @@ const app = new Hono().basePath('/api');
 
 app.use(prettyJSON({ space: 4 }));
 
-app.all('*', (c) => {
+app.get('/', (c) => {
   // Retrieve IP address and user-agent
   const userAgent = c.req.headers.get('user-agent'); // Access user-agent header
 
@@ -27,5 +27,17 @@ app.all('*', (c) => {
   return c.json(response, { status: Status.OK });
 });
 
+app.post('/', async (c) => {
+  try {
+    const input = await c.req.json();
+    // Process input data
+
+    // Return response with a specific status code (200 OK by default)
+    return c.json(input, { status: Status.OK });
+  } catch (error) {
+    // Handle errors and return appropriate status code (e.g., 400 Bad Request for validation errors)
+    return c.json({ error: 'Invalid input' }, { status: Status.BadRequest });
+  }
+});
 
 export default handle(app);
