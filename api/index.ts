@@ -3,6 +3,21 @@ import { handle } from '@hono/node-server/vercel';
 
 const app = new Hono().basePath('/api');
 
+// CORS middleware function
+const corsMiddleware = (c, next) => {
+  c.res.headers.set('Access-Control-Allow-Origin', '*');
+  c.res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // Handle preflight requests
+  if (c.req.method === 'OPTIONS') {
+    c.res.status = 204; // No Content
+    return c.json({});
+  }
+
+  return next();
+};
+
 app.get('/', (c) => {
   // Retrieve IP address and user-agent
 
