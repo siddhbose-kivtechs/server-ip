@@ -7,7 +7,11 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.2.0",
-    "hono": "^3.7.3"
+    "hono": "^3.7.3",
+       "jose": "^5.9.6",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.11.0"
+    
   },
   "devDependencies": {
     "vercel": "^32.4.0"
