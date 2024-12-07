@@ -3,6 +3,79 @@ import { handle } from '@hono/node-server/vercel';
 
 const app = new Hono().basePath('/api');
 
+import jwt from 'jsonwebtoken';
+
+// Middleware to parse and analyze JWT
+const jwtcheck = async (c) => {
+  try {
+    // Extract JWT and ulidSession from the request body
+    const body = await c.req.json();
+    const token = body.idToken; // Expecting `idToken` as per Server 1's implementation
+    const ulidSession = body.ulidSession || 'NA'; // Default to 'NA' if not provided
+
+    if (!token) {
+      return c.json({ error: 'JWT token is required' }, 400);
+    }
+
+    // Log the received token data (sanitize logs in production)
+    console.log("Received JWT:", { ulidSession });
+
+    // Decode JWT without verification to extract header and payload
+    const decoded = jwt.decode(token, { complete: true });
+
+    if (!decoded) {
+      return c.json({ error: 'Invalid JWT' }, 400);
+    }
+
+    // (Optional) Verify the token with a secret if required
+    const SECRET = process.env.JWT_SECRET; // Use environment variable for the secret
+    let isValid = false;
+    try {
+      jwt.verify(token, SECRET); // Throws an error if invalid
+      isValid = true;
+    } catch (verificationError) {
+      isValid = false;
+    }
+
+    // Log the decoded data and verification status
+    console.log("Decoded JWT:", { header: decoded.header, isValid });
+
+    // Construct JWT log object (consider saving this to a database)
+    const jwtLog = {
+      idToken: token,
+      header: decoded.header,
+      payload: null, // Don't store the payload for security reasons
+      isValid,
+      receivedAt: new Date(),
+      ulidSession, // Use the value from request or 'NA' if not provided
+    };
+
+    // Log the JWT data (sanitize logs in production)
+    console.log('JWT Log:', jwtLog);
+
+    // Return received and processed data
+    return c.json({
+      received: {
+        idToken: token,
+      },
+      processed: {
+        header: decoded.header,
+        isValid,
+      },
+      message: 'JWT successfully analyzed',
+    });
+  } catch (error) {
+    // Log the error (sanitize in production)
+    console.error("Error processing JWT:", error.message);
+    return c.json({ error: 'An error occurred', details: error.message }, 500);
+  }
+};
+
+export default jwtcheck;
+
+
+
+
 // CORS middleware function
 const corsMiddleware = (c, next) => {
   c.res.headers.set('Access-Control-Allow-Origin', '*');
@@ -18,31 +91,6 @@ const corsMiddleware = (c, next) => {
   return next();
 };
 
-app.get('/', (c) => {
-  // Retrieve IP address and user-agent
-
-  const userAgent = c.req.headers.get('user-agent'); // Access user-agent header
-console.log(c);
-  // Prepare response data
-  const response = {
-    message: 'IP services Working CoolieWale',
-   IP: c.ip|| c.req.headers.get('x-real-ip')||c.req.headers.get('x-forwarded-for')||c.req.headers.get('x-vercel-forwarded-for'),
-    VERCEL_latitude: c.req.headers.get('x-vercel-ip-latitude'),
-    VERCEL_longitude: c.req.headers.get('x-vercel-ip-longitude'),
-    VERCEL_city: c.req.headers.get('x-vercel-ip-city'),
-    VERCEL_region: c.req.headers.get('x-vercel-ip-country-region'),
-   VERCEL_country: c.req.headers.get('x-vercel-ip-country'),
-   UA: userAgent,
-    date_time: new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }),
-  };
-
-  // Use c.json to send the data as JSON
-  return c.json(response);
-});
-
-app.post('/', async (c) => {
-  const input = await c.req.json();
-  return c.json(input);
-});
+app.all('*', jwtcheck);
 
 export default handle(app);
